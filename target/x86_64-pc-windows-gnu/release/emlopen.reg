@@ -1,0 +1,8 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\emlopen]
+@="URL:Open EML"
+"URL Protocol"=""
+
+[HKEY_CLASSES_ROOT\emlopen\shell\open\command]
+@="\"C:\\eml_opener\\eml_opener.exe\" \"%1\""
