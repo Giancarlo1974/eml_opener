@@ -6,8 +6,15 @@ use std::process::Command;
 use urlencoding::decode;
 
 // Per il download
-fn download_file(url: &str, dest_path: &PathBuf) -> Result<(), Box<dyn std::error::Error>> {
+fn download_file(url: &str, dest_path: &PathBuf, log_file: &mut File) -> Result<(), Box<dyn std::error::Error>> {
     let mut resp = reqwest::blocking::get(url)?;
+    let status = resp.status();
+    let _ = writeln!(log_file, "🌐 HTTP status: {}", status);
+
+    if !status.is_success() {
+        return Err(format!("HTTP error: {}", status).into());
+    }
+
     let mut out = File::create(dest_path)?;
     std::io::copy(&mut resp, &mut out)?;
     Ok(())
@@ -36,10 +43,17 @@ fn main() {
     }
 
     let raw = args[1].trim_start_matches("emlopen://");
+    let _ = writeln!(log_file, "🔎 Raw input: {}", args[1]);
     let decoded = decode(raw).unwrap_or_else(|_| raw.into());
     let mut decoded_str = decoded.to_string();
 
-    // Aggiungi automaticamente https://
+    // Rimuovi trailing slash se rovina il file
+    if decoded_str.ends_with(".msg/") {
+        decoded_str = decoded_str.trim_end_matches('/').to_string();
+        let _ = writeln!(log_file, "✂️ Removed trailing slash: {}", decoded_str);
+    }
+
+    // Aggiungi automaticamente https:// se manca
     if !decoded_str.starts_with("http:/") && !decoded_str.starts_with("https:/") {
         decoded_str = format!("https://{}", decoded_str);
     }
@@ -50,7 +64,7 @@ fn main() {
     let path_to_open = if decoded_str.starts_with("http:/") || decoded_str.starts_with("https:/") {
         let tmp_path = PathBuf::from("C:\\eml_opener\\downloaded_file.msg");
 
-        match download_file(&decoded_str, &tmp_path) {
+        match download_file(&decoded_str, &tmp_path, &mut log_file) {
             Ok(_) => {
                 let _ = writeln!(log_file, "✅ File downloaded: {}", tmp_path.display());
                 tmp_path
