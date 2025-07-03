@@ -41,6 +41,7 @@ It allows automatic opening of `.eml` and `.msg` email files directly with Outlo
 git clone https://github.com/your-username/eml_opener.git
 cd eml_opener
 cargo build --release
+cargo build --release --target x86_64-pc-windows-gnu
 ```
 
 Output: `target/release/eml_opener.exe`
